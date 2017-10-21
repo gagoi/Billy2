@@ -42,10 +42,10 @@ GLuint vboID;
 GLuint occlusionTexture;
 GLuint occlusionBuffer;
 
-float bufferInfos[16] = {-1, -1,
-                        1, -1,
+float bufferInfos[16] = {0, 0,
+                        1, 0,
                         1, 1,
-                        -1, 1,
+                        0, 1,
                         0, 0,
                         1, 0,
                         1, 1,
@@ -105,7 +105,7 @@ void draw(SDL_Window * screen){
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(SDL_GetTicks()%11355/11355., SDL_GetTicks()%3345/3345., SDL_GetTicks()%83153/83153., 1);
 
-    glm::mat4 projection = glm::ortho(-2.f, 1.f, -2.f, 2.f);
+    glm::mat4 projection = glm::ortho(-1.f, 1.f, -1.f, 1.f);
     glm::mat4 modelview = glm::mat4(1.0);
 
     modelview = translate(modelview, glm::vec3(angleX, angleY, 0));
@@ -115,12 +115,15 @@ void draw(SDL_Window * screen){
 
         glBindFramebuffer(GL_FRAMEBUFFER, occlusionBuffer);
 
+            
+            glClear(GL_COLOR_BUFFER_BIT);
+
             glBindBuffer(GL_ARRAY_BUFFER, vboID);
 
                 glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
                 glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
 
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
             
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -132,6 +135,8 @@ void draw(SDL_Window * screen){
     
     //occlusionTexture is now the occlusion map texture
 
+    modelview = glm::mat4(1.0f);
+
     glUseProgram(drawShader->getProgramID());
 
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
@@ -140,7 +145,7 @@ void draw(SDL_Window * screen){
             glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
 
             glBindTexture(GL_TEXTURE_2D, occlusionTexture);
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
             glBindTexture(GL_TEXTURE_2D, 0);
                     
         glBindBuffer(GL_ARRAY_BUFFER, 0);
