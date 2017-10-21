@@ -6,6 +6,7 @@
 int main()
 {
 	bool terminate = false;
+	SDL_Event event;
 
 	if (SDL_Init(SDL_INIT_VIDEO))
 	{
@@ -21,6 +22,20 @@ int main()
 	{
 	    while(!terminate)
 	    {
+	    	if (SDL_PollEvent(&event))
+	    	{
+	        	switch(event.type)
+	        	{
+	            	case SDL_KEYDOWN:
+	            		if (event.key.keysym.sym == SDLK_q)
+	            		{
+	                		terminate = true;
+	            		}
+	                	break;
+	        	}
+	    	}
+
+
 			SDL_Renderer *pRenderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED); // Création d'un SDL_Renderer utilisant l'accélération matérielle
 			if (pRenderer)
 			{
@@ -54,10 +69,8 @@ int main()
 					fprintf(stderr,"Échec de création du renderer (%s)\n",SDL_GetError());
 				}
 
-					SDL_UpdateWindowSurface(window);
-					SDL_Delay(1000); /* Attendre trois secondes, que l'utilisateur voie la fenêtre */
+				SDL_UpdateWindowSurface(window);
 
-					SDL_DestroyWindow(window);
 			}
 		}
 	else
@@ -65,6 +78,7 @@ int main()
 		fprintf(stderr,"Erreur de création de la fenêtre: %s\n", SDL_GetError());
 	}
 
+	SDL_DestroyWindow(window);
 	SDL_Quit();
 
 	return EXIT_SUCCESS;
