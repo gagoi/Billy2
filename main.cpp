@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
-#include <GL/g.h>
+#include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glext.h>
 #include <GL/freeglut.h>
@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <stdio.h>
 #include "Shader.h"
+
+
 
 #ifndef BUFFER_OFFSET
 
@@ -30,20 +32,35 @@ float angleX = 0, angleY = 0, altitude = 0;
 
 void draw(SDL_Window *);
 void SDLGLSetup();
+void prepareVBO();
 
 Shader * occlusionShader;
+Shader * drawShader;
+
+GLuint vboID;
+GLuint occlusionTexture;
+GLuint occlusionBuffer;
+
+float bufferInfos[16] = {-1, -1,
+                        1, -1,
+                        1, 1,
+                        -1, 1,
+                        0, 0,
+                        1, 0,
+                        1, 1,
+                        0, 1};
 
 int main(int argc, char *argv[])
 {
     SDLGLSetup();
     glewInit();
+    prepareVBO();
 
-    occlusionShader = new Shader(std::string("Shaders/shader2D.vert"), std::string("Shaders/shader2D.frag"));
-    
-    std::cout << "shader attrib done: " << occlusionShader << std::endl;
+    occlusionShader = new Shader(std::string("Shaders/shader2D.vert"), std::string("Shaders/occlusion2D.frag"));
+    drawShader = new Shader(std::string("Shaders/shader2D.vert"), std::string("Shaders/shader2D.frag"));
 
     occlusionShader->charger();
-    std::cout << "load complete" << std::endl;
+    drawShader->charger();
 
     SDL_Event event;
     bool terminate = false;
@@ -90,68 +107,44 @@ void draw(SDL_Window * screen){
     glm::mat4 projection = glm::ortho(-10.f, 10.f, -10.f, 10.f);
     glm::mat4 modelview = glm::mat4(1.0);
     
-    
 
     glUseProgram(occlusionShader->getProgramID());
-        GLuint occlusionBuffer;
         glGenFramebuffers(1, &occlusionBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, occlusionBuffer);
-            GLuint occlusion;
-            glGenTextures(1, &occlusion);
-            glBindTexture(GL_TEXTURE_2D, occlusion);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB,
-                GL_UNSIGNED_BYTE, 0);
+
+            glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
+            glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
                 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, occlusion, 0);
-            GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-            glDrawBuffers(1, DrawBuffers);
+            glBindBuffer(GL_ARRAY_BUFFER, vboID);
 
-            float bufferInfos[16] = {-0.5, -0.5,
-                                    0.5, -0.5,
-                                    0.5, 0.5,
-                                    -0.5, 0.5,
-                                    0, 0,
-                                    1, 0,
-                                    1, 1,
-                                    0, 1};
-
-                GLuint m_vboID;
-                glGenBuffers(1, &m_vboID);
-                glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
-
-                    glBufferData(GL_ARRAY_BUFFER, 16 * sizeof(float), &bufferInfos, GL_STATIC_DRAW);
-
-                    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
-                    glEnableVertexAttribArray(0);
-                    
-                    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(8 * sizeof(float)));
-                    glEnableVertexAttribArray(1);
-
-                glBindBuffer(GL_ARRAY_BUFFER , 0);
-
-                
-
-                glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
-                glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
-        
-
-
-                
-                glBindBuffer(GL_ARRAY_BUFFER, m_vboID);
-
-                    glBindTexture(GL_TEXTURE_2D, occlusion);
-
-                    glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
-                    
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
+            
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             //draw scene with only walls
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glUseProgram(0);
+
+    glUseProgram(drawShader->getProgramID());
+
+        glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    
+            glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
+            glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
+            
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+            glEnableVertexAttribArray(0);
+
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(8));
+            glEnableVertexAttribArray(1);
+
+            glBindTexture(GL_TEXTURE_2D, occlusionTexture);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 8);
+            glBindTexture(GL_TEXTURE_2D, 0);
+                    
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     glUseProgram(0);
 
 
@@ -190,4 +183,31 @@ void SDLGLSetup(){
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void prepareVBO(){
+
+    glGenFramebuffers(1, &occlusionBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, occlusionBuffer);
+    
+        glGenTextures(1, &occlusionTexture);
+        glBindTexture(GL_TEXTURE_2D, occlusionTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB,
+            GL_UNSIGNED_BYTE, 0);
+            
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, occlusionTexture, 0);
+        GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+        glDrawBuffers(1, DrawBuffers);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glGenBuffers(1, &vboID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+
+        glBufferData(GL_ARRAY_BUFFER, 16 * sizeof(float), &bufferInfos, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER , 0);
 }

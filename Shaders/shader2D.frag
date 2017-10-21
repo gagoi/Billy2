@@ -2,12 +2,11 @@
 
 in vec2 texCoord;
 
-uniform sampler2D tex; // input texture loaded by BindTexture
-
+uniform sampler2D tex;
 out vec4 fragColor;
 
 void main(){
 
-	fragColor = texture(tex, texCoord);
-	
+	fragColor = vec4(1,1,1,1);
+
 }
