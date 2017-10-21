@@ -12,13 +12,9 @@ float normeOf(float x, float y);
 void updatePosition(Ennemy * bot, int numPos, float * pos, Player * player, float mvt);
 
 
-void updatePosition(vector<vector2f> , Ennemy * bot, int numPos, float * pos, Player * player, float mvt)
+void updatePosition(vector<vector2f> back, Ennemy * bot, int numPos, float * pos, Player * player, float mvt)
 {
-    if( bot.see(player) ){
-        vector<Vector2f> back;
-        back;
-
-        while ()
+    if( notEmpty(back) ){
 
     }
 }
