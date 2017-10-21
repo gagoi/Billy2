@@ -1,12 +1,12 @@
-#version 330
+#version 330 compatibility
 
-in vec2 texCoord;
+in vec2 texCoordOut;
 
 uniform sampler2D tex;
 out vec4 fragColor;
 
 void main(){
 
-	fragColor = vec4(1,1,1,1);
+	fragColor = texture(tex, texCoordOut);
 
 }
