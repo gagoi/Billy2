@@ -30,7 +30,7 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	window = SDL_CreateWindow("BILLY 2 : Shpïone", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1600, 900, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("BILLY 2 : Shpïone", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1600, 900, /*SDL_WINDOW_FULLSCREEN_DESKTOP | */SDL_WINDOW_SHOWN);
 
 	if (window)
 	{
@@ -92,7 +92,7 @@ void loadBackground(SDL_Renderer *pRenderer, SDL_Surface *pSprite, SDL_Texture *
 				dest = {0, 0, pSprite->w, pSprite->h};
 				SDL_RenderCopy(pRenderer, pTexture, NULL, &dest); // Copie du sprite grâce au SDL_Renderer
 				  
-				//SDL_RenderPresent(pRenderer); // Affichage
+				SDL_RenderPresent(pRenderer); // Affichage
 			}
 			else
 			{
@@ -125,7 +125,7 @@ void loadTitle(SDL_Renderer *pRenderer, SDL_Surface *pSprite, SDL_Texture *pText
 				dest = {850, 100, pSprite->w, pSprite->h};
 				SDL_RenderCopy(pRenderer, pTexture, NULL, &dest); // Copie du sprite grâce au SDL_Renderer
 				  
-				//SDL_RenderPresent(pRenderer); // Affichage
+				SDL_RenderPresent(pRenderer); // Affichage
 			}
 			else
 			{
@@ -158,7 +158,7 @@ void loadPlayButton(SDL_Renderer *pRenderer, SDL_Surface *pSprite, SDL_Texture *
 				dest = {1050, 400, pSprite->w, pSprite->h};
 				SDL_RenderCopy(pRenderer, pTexture, NULL, &dest); // Copie du sprite grâce au SDL_Renderer
 				  
-				//SDL_RenderPresent(pRenderer); // Affichage
+				SDL_RenderPresent(pRenderer); // Affichage
 			}
 			else
 			{
