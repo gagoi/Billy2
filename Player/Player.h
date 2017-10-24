@@ -1,6 +1,15 @@
 #ifndef DEF_PLAYER
 #define DEF_PLAYER
 
+#include <GL/glew.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glext.h>
+#include <GL/freeglut.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include "../sdlglutils.h"
+
 class Player{
 private:
     float m_x;
