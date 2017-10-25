@@ -7,6 +7,8 @@ in vec2 vTexCoord0;
 layout(binding = 0) uniform sampler2D tex;
 layout(binding = 1) uniform sampler2D shadowMap;
 
+uniform vec2 resolution;
+
 out vec4 fragColor;
 
 void main(){
@@ -24,12 +26,22 @@ void main(){
 		angle -= 1.;
 	while(angle < 0.)
 		angle += 1.;
+	/*
+	float pixelPos = angle * resolution.x;
+	float pixelBase1 = floor(pixelPos);
+	float pixelBase2 = pixelBase1 + 1.;
+	float percent1 = pixelPos - pixelBase1;
+	float percent2 = 1.-percent1;
+	while(pixelBase2 > resolution.x)
+		pixelBase2 -= resolution.x;
 	
+	
+	float lightDistance = texture(shadowMap, vec2(pixelBase1 / resolution.x, 0)).r * percent2 + texture(shadowMap, vec2(pixelBase2 / resolution.x, 0)).r * percent1;*/
 	float lightDistance = texture(shadowMap, vec2(angle, 0)).r;
 	
 	if(dist > lightDistance)
 		fragColor /= 2.;
 	
-	//fragColor = texture(shadowMap, vTexCoord0);
-
+	//fragColor = vec4(pixelBase1 / resolution.x);
+	
 }

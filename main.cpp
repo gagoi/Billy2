@@ -25,7 +25,7 @@
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900
 
-int msaa = 0;
+int msaa = 8;
 unsigned int lastTime, currentTime;
 SDL_Window *screen;
 SDL_GLContext glcontext;
@@ -50,7 +50,7 @@ GLuint occlusionFramebuffer;
 
 GLuint lightrayTexture;
 GLuint lightrayFramebuffer;
-glm::vec2 shadowRes = glm::vec2((float)WINDOW_WIDTH, (float)500); // 0.5 degrees with 1/100 unit dist. resolution
+glm::vec2 shadowRes = glm::vec2((float)500, (float)500); // 0.5 degrees with 1/100 unit dist. resolution
 
 float bufferInfos[32 * 3] =  {
                         702, 575,
@@ -67,8 +67,8 @@ float bufferInfos[32 * 3] =  {
                         400, 400,
                         
                         0, 0,
-                        WINDOW_WIDTH, 0,
-                        WINDOW_WIDTH, WINDOW_HEIGHT,
+                        shadowRes.x, 0,
+                        shadowRes.x, WINDOW_HEIGHT,
                         0, WINDOW_HEIGHT,
 
                         0, 0,
@@ -241,6 +241,7 @@ void draw(SDL_Window * screen){
     
             glUniformMatrix4fv(glGetUniformLocation(drawShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
             glUniformMatrix4fv(glGetUniformLocation(drawShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
+            glUniform2f(glGetUniformLocation(drawShader->getProgramID(), "resolution"), shadowRes.x, shadowRes.y);
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, occlusionTexture);
@@ -323,10 +324,10 @@ void prepareVBO(){
     
         glGenTextures(1, &lightrayTexture);
         glBindTexture(GL_TEXTURE_2D, lightrayTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shadowRes.x, 900, 0, GL_RGB,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, shadowRes.x, 900, 0, GL_RGB,
             GL_UNSIGNED_BYTE, 0);                                 
             
-        // /!\ interpolated when drawed, need to test differents settings with poor resolution
+        // /!\ interpolated when drawed, need to test differents settings with poor resolution result: no effect :(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glBindTexture(GL_TEXTURE_2D, 0);

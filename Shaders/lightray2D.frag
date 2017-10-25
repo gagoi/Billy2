@@ -16,20 +16,41 @@ out vec4 screenColor;
 const float THRESHOLD = 0.75;
 
 void main(void) {
-	float color = 1.0;
+	float color = 0.0;
 	float angle = vTexCoord0.x * 2. * PI;
-	float step = 0.5/255.; //resolution.y; max resolution since it's encoded on 8-bits now. Must use r, g, and b as an unsigned 3 byte value to have better quality
-  
-	for(float dist = 0.; dist < 0.5; dist += step){
-		vec2 coord = vec2(cos(angle) * dist + 0.5, sin(angle) * dist + 0.5);
-		vec4 data = texture(u_texture, coord);
-	  
-		if(data.r > 0.5){
+	float angleCos = cos(angle);
+	float angleSin = sin(angle);
+	float step = 0.5/resolution.y*5;
+	
+	float dist;
+	vec4 data;
+	bool broadPhasePassed = false;
+	
+	if(texture(u_texture, vec2(0.5,0.5)).r < 0.5){
+		color = 1.;
+		
+		for(dist = 0.; dist < 0.5; dist += step){
+			vec2 coord = vec2(angleCos * dist + 0.5, angleSin * dist + 0.5);
+			data = texture(u_texture, coord);
+		  
+			if(data.r > 0.5){
+				broadPhasePassed = true;;
+				break;
+			}
+		}
+		
+		if(broadPhasePassed){
+			step /= 5;
+			
+			while(data.r > 0.5){
+				dist -= step;
+				vec2 coord = vec2(angleCos * dist + 0.5, angleSin * dist + 0.5);
+				data = texture(u_texture, coord);
+			}
+			
 			color = dist;
-			break;
 		}
 	}
-
 	
 	screenColor = vec4(color);
 }
