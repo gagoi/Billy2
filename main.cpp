@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include "Shader.h"
 #include "Player/Player.h"
+#include "Map/map.h"
 
 
 
@@ -25,8 +26,9 @@
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900
 
-int msaa = 8;
-unsigned int lastTime, currentTime;
+bool msaa = true;
+int fps = 60;
+unsigned int lastTime, startTime, timePassed;
 SDL_Window *screen;
 SDL_GLContext glcontext;
 
@@ -36,6 +38,7 @@ void draw(SDL_Window *);
 void SDLGLSetup();
 void prepareVBO();
 void CheckVBO();
+GLenum err;
 
 Shader * occlusionShader;
 Shader * lightrayShader;
@@ -50,21 +53,30 @@ GLuint occlusionFramebuffer;
 
 GLuint lightrayTexture;
 GLuint lightrayFramebuffer;
-glm::vec2 shadowRes = glm::vec2((float)500, (float)500); // 0.5 degrees with 1/100 unit dist. resolution
+glm::vec2 shadowRes = glm::vec2((float)1000, (float)2000);
+
+const char *layout = "AAAAAAAMAMMMAAAMMMAAAAAAAMAMMMAAAMMMAAAAAAAAAAAAAAAAAAMMMMMMMMMAMMMMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMAMMAMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMMMMMMMMMM";
+int sizeX = 18;
+int sizeY = 8;
+
+float scl = 100;
+Map * map;
 
 float bufferInfos[32 * 3] =  {
-                        702, 575,
-                        702, 758,
-                        965, 758,
-                        965, 575,
-                        1000, 800,
-                        1200, 800,
-                        1200, 660,
-                        1000, 660,
-                        400, 300,
-                        500, 300,
-                        500, 400,
-                        400, 400,
+                        0,0,
+                        0,0,
+                        0,0,
+                        0,0,
+                        
+                        0,0,
+                        0,0,
+                        0,0,
+                        0,0,
+                        
+                        0,0,
+                        0,0,
+                        0,0,
+                        0,0,
                         
                         0, 0,
                         shadowRes.x, 0,
@@ -111,7 +123,10 @@ int main(int argc, char *argv[])
 {
     SDLGLSetup();
     glewInit();
+
     prepareVBO();
+
+    map = new Map(sizeX, sizeY, layout, scl);
 
     occlusionShader = new Shader(std::string("Shaders/shader2D.vert"), std::string("Shaders/occlusion2D.frag"));
     lightrayShader = new Shader(std::string("Shaders/shader2d.vert"), std::string("Shaders/lightray2D.frag"));
@@ -126,7 +141,15 @@ int main(int argc, char *argv[])
 
     SDL_Event event;
     bool terminate = false;
+
+    lastTime = SDL_GetTicks();
+
     while(!terminate){
+
+        lastTime = startTime;
+        startTime = SDL_GetTicks();
+        timePassed = startTime - lastTime;
+
         SDL_PollEvent(&event);
 
         switch(event.type)
@@ -136,26 +159,26 @@ int main(int argc, char *argv[])
         }
         
         const Uint8 *state = SDL_GetKeyboardState(NULL);
-        
-        float timePassed = 20./1000;
 
         if (state[SDL_SCANCODE_ESCAPE])
             terminate = true;;
         if (state[SDL_SCANCODE_W])
-            angleY += 1000 * timePassed;
+            angleY -= timePassed;
         if (state[SDL_SCANCODE_S])
-            angleY -= 1000 * timePassed;
+            angleY += timePassed;
         if (state[SDL_SCANCODE_A])
-            angleX -= 1000 * timePassed;
+            angleX += timePassed;
         if (state[SDL_SCANCODE_D])
-            angleX += 1000 * timePassed;
+            angleX -= timePassed;
         if (state[SDL_SCANCODE_SPACE])
             altitude += 1;
         if (state[SDL_SCANCODE_C])
             altitude -= 1;
         draw(screen);
 
-        SDL_Delay(20);
+        int sleep = 1000./fps - (SDL_GetTicks() - startTime);
+        if(sleep > 0)
+            SDL_Delay(sleep);
     }
 
 
@@ -165,9 +188,6 @@ int main(int argc, char *argv[])
 
 
 void draw(SDL_Window * screen){
-    glClearColor(0,0,0,0);
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glClearColor(SDL_GetTicks()%11355/11355., SDL_GetTicks()%33245/33245., SDL_GetTicks()%83153/83153., 1);
     glm::mat4 projection = glm::ortho(0., (double) WINDOW_WIDTH, 0., (double) WINDOW_HEIGHT);
     glm::mat4 modelview = glm::mat4(1.);
 
@@ -178,19 +198,18 @@ void draw(SDL_Window * screen){
 
         glBindFramebuffer(GL_FRAMEBUFFER, occlusionFramebuffer);
 
-            
-            glClearColor(0,0,0,0);
-            glClear( GL_COLOR_BUFFER_BIT );
+            glClearColor(0,0,0,1);
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vboID);
+            glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
+            glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
 
-                glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
-                glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
-
-                for( int i = 0; i < 4*3; i+= 4)
-                    glDrawArrays(GL_TRIANGLE_FAN, i, 4);
-            
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            for( int i = 0; i < sizeY; i++){
+                for( int j = 0; j < sizeX; j++){
+                    if(map->getType(j*scl, i*scl) != 0)
+                        map->getWall(j*scl, i*scl)->draw();
+                }
+            }
 
             //draw scene with only walls
 
@@ -200,20 +219,14 @@ void draw(SDL_Window * screen){
     //occlusionTexture is now the occlusion map texture
 
     modelview = glm::mat4(1.0f);
-
     projection = glm::ortho(0.,(double) WINDOW_WIDTH, 0., (double) WINDOW_HEIGHT);
-    //projection = glm::ortho(0.,1.,0.,1.);
 
-    // OSEF projection, all is done in frag shader depending on occlusion texture and pixel width
-    // but using same projection to have correct x values on occlusion map (which is WINDOW_WIDTH)
-    // could do projection = glm::ortho(0, x, 0, 1) if drawing a (0, x) on x axis rectangle
-    // optimisation would be x beeing shadowRes.x
     glUseProgram(lightrayShader->getProgramID());
 
         glBindFramebuffer(GL_FRAMEBUFFER, lightrayFramebuffer);
 
             glClearColor(0,0,0,0);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             glBindBuffer(GL_ARRAY_BUFFER, vboID);
         
@@ -232,10 +245,12 @@ void draw(SDL_Window * screen){
 
     glUseProgram(0);
 
-
     projection = glm::ortho(0.,(double) WINDOW_WIDTH, 0., (double) WINDOW_HEIGHT);
     
     glUseProgram(drawShader->getProgramID());
+
+        glClearColor(0,0,0,0);
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
     
@@ -253,7 +268,7 @@ void draw(SDL_Window * screen){
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            GLenum err;
+            
             while((err = glGetError()) != GL_NO_ERROR)
                 std::cout << "Error drawing: " << err << std::endl;
 
@@ -262,18 +277,27 @@ void draw(SDL_Window * screen){
 
     glUseProgram(0);
 
+    glBegin(GL_QUADS);
+        glColor3f(0, 0, 1);
+        glVertex2f(-0.01, -0.01*16/9);
+        glVertex2f(0.01, -0.01*16/9);
+        glVertex2f(0.01, 0.01*16/9);
+        glVertex2f(-0.01, 0.01*16/9);
+    glEnd();
+
     SDL_GL_SwapWindow(screen);
 }
 
 void SDLGLSetup(){
     SDL_Init(SDL_INIT_VIDEO);
-    GLenum err;
-
     atexit(SDL_Quit);
+
+    GLint * samples;
+    glGetIntegerv(GL_MAX_SAMPLES, samples);
 
     if(msaa){
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaa);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, *samples);
     }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -288,14 +312,13 @@ void SDLGLSetup(){
 
     SDL_GL_CreateContext(screen);
 
-
     if(msaa)
-        glEnable(GLUT_MULTISAMPLE);
+        glEnable(GL_MULTISAMPLE);
 
     //glEnable(GL_DEPTH_TEST);
     //glDepthFunc(GL_ALWAYS);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void prepareVBO(){
@@ -305,7 +328,9 @@ void prepareVBO(){
     
         glGenTextures(1, &occlusionTexture);
         glBindTexture(GL_TEXTURE_2D, occlusionTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB,
+        
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB,
             GL_UNSIGNED_BYTE, 0);
             
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -324,12 +349,11 @@ void prepareVBO(){
     
         glGenTextures(1, &lightrayTexture);
         glBindTexture(GL_TEXTURE_2D, lightrayTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, shadowRes.x, 900, 0, GL_RGB,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, shadowRes.x, 1, 0, GL_RGB,
             GL_UNSIGNED_BYTE, 0);                                 
             
-        // /!\ interpolated when drawed, need to test differents settings with poor resolution result: no effect :(
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, lightrayTexture, 0);
@@ -338,14 +362,12 @@ void prepareVBO(){
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // test VBO for rendering 3 rects. generation
     glGenBuffers(1, &vboID);
     glBindBuffer(GL_ARRAY_BUFFER, vboID);
 
         glBufferData(GL_ARRAY_BUFFER, 32 * 3 * sizeof(float), bufferInfos, GL_STATIC_DRAW);
         
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
-        
         glEnableVertexAttribArray(0);
 
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(16*3 * sizeof(float)));
@@ -353,14 +375,19 @@ void prepareVBO(){
     
     glBindBuffer(GL_ARRAY_BUFFER , 0);
 
-    CheckVBO();
+    std::cout << "Rendering errors\n";
+    while((err = glGetError()) != GL_NO_ERROR){
+        std::cout <<std::hex<<"0x"<< err << std::endl;
+    }
+
+    //CheckVBO();
 }
 
 void CheckVBO(){
     int size = 32*3 * sizeof(float);
     float * data = (float*) calloc(size, sizeof(float));
 
-    GLenum err;
+    
     std::cout << "Errors\n";
     while((err = glGetError()) != GL_NO_ERROR){
         std::cout <<std::hex<<"0x"<< err << std::endl;

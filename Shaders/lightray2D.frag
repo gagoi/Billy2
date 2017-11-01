@@ -1,4 +1,4 @@
-# version 330
+# version 330 core
 
 #define PI 3.14159265359
 
@@ -41,9 +41,23 @@ void main(void) {
 		
 		if(broadPhasePassed){
 			step /= 5;
+
+			float angle2 = angle;
+			while(angle2 >= PI/2)
+				angle2 -= PI;
+			while(angle2 < -PI/2);
+				angle2 += PI;
+
+			float angle3 = angle;
+			while(angle3 >= PI)
+				angle3 -= PI;
+			while(angle3 < 0);
+				angle3 += PI;
+
+			float maxdist = dist + 0.02/ sqrt(-min(cos(angle2), sin(angle3)));
 			
-			while(data.r > 0.5){
-				dist -= step;
+			while(data.r > 0.5 && dist <= maxdist){
+				dist += step;
 				vec2 coord = vec2(angleCos * dist + 0.5, angleSin * dist + 0.5);
 				data = texture(u_texture, coord);
 			}

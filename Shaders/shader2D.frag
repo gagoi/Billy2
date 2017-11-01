@@ -1,4 +1,4 @@
-#version 430 compatibility
+#version 430 core
 
 #define PI 3.14159265359
 
@@ -16,7 +16,7 @@ void main(){
 	
 	vec2 rectCoord = vTexCoord0 - 0.5;
 	float angle = atan(rectCoord.y/rectCoord.x);
-	float dist = pow(rectCoord.y, 2) + pow(rectCoord.x, 2);
+	float dist = sqrt(pow(rectCoord.y, 2) + pow(rectCoord.x, 2));
 	if(rectCoord.x < 0.)
 		angle += PI;
 	
