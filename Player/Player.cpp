@@ -72,9 +72,9 @@ void Player::tp(float x, float y){
 void Player::draw(glm::mat4 projection, glm::mat4 modelview){
 
     // recup occlusion texture // DONE
-    //draw light rays distances tex
-    //draw texture of light beams
-    //draw scene multiplied with light beams texture
+    //draw light rays distances tex // DONE
+    //draw texture of light beams // DONE
+    //draw scene multiplied with light beams texture // DONE
 
     glBindVertexArray(m_vaoID);
 

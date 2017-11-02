@@ -11,7 +11,7 @@ Map::Map(int x, int y):m_width(x), m_height(y){
 Map::Map(int x, int y, const char * str, float cellSize):m_width(x), m_height(y), m_cellSize(cellSize){
     for(int j = 0; j < y; j++){
         for(int i = 0; i < x; i++){
-            m_layout.push_back(new Wall(str[j*x + i] - 'A', cellSize, i*cellSize, j*cellSize));
+            m_layout.push_back(new Wall(str[j*x + i] - 'A', &m_textures, cellSize, i*cellSize, j*cellSize));
         }
     }
 }
@@ -19,10 +19,8 @@ Map::Map(int x, int y, const char * str, float cellSize):m_width(x), m_height(y)
 Map::~Map(){
 }
 
-void Map::initTextures(GLuint textures[]){
-    for(int i = 0; i < 26; i++){
-        m_textures[i] = textures[i];
-    }
+void Map::initTextures(GLuint * textures){
+    m_textures = textures;
 }
 
 int Map::getWidth(){

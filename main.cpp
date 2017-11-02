@@ -27,7 +27,7 @@
 #define WINDOW_HEIGHT 900
 
 bool msaa = true;
-int fps = 60;
+int fps = 120;
 unsigned int lastTime, startTime, timePassed;
 SDL_Window *screen;
 SDL_GLContext glcontext;
@@ -53,13 +53,13 @@ GLuint occlusionFramebuffer;
 
 GLuint lightrayTexture;
 GLuint lightrayFramebuffer;
-glm::vec2 shadowRes = glm::vec2((float)1000, (float)2000);
+glm::vec2 shadowRes = glm::vec2((float)1000, (float)1000);
 
-const char *layout = "AAAAAAAMAMMMAAAMMMAAAAAAAMAMMMAAAMMMAAAAAAAAAAAAAAAAAAMMMMMMMMMAMMMMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMAMMAMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMMMMMMMMMM";
+const char *layout = "MAAAAAAMAMMMAAAMMMMAAAAAAMAMMMAAAMMMMAAAAAAAAAAAAAAAAAMMMMMMMMMAMMMMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMAMMAMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMMMMMMMMMM";
 int sizeX = 18;
 int sizeY = 8;
 
-float scl = 100;
+float scl = 50;
 Map * map;
 
 float bufferInfos[32 * 3] =  {
@@ -80,8 +80,8 @@ float bufferInfos[32 * 3] =  {
                         
                         0, 0,
                         shadowRes.x, 0,
-                        shadowRes.x, WINDOW_HEIGHT,
-                        0, WINDOW_HEIGHT,
+                        shadowRes.x, 1,
+                        0, 1,
 
                         0, 0,
                         WINDOW_WIDTH, 0,
@@ -110,10 +110,12 @@ float bufferInfos[32 * 3] =  {
                         1, 0,
                         1, 1,
                         0, 1,
+
                         0, 0,
                         1, 0,
                         1, 1,
                         0, 1,
+                        
                         0, 0,
                         1, 0,
                         1, 1,
@@ -125,8 +127,13 @@ int main(int argc, char *argv[])
     glewInit();
 
     prepareVBO();
-
+    
     map = new Map(sizeX, sizeY, layout, scl);
+
+    GLuint *textures = (GLuint*) calloc(26, sizeof(GLuint));
+    textures[0] = loadTexture("resources/textures/grass1.png");
+    textures['M' - 'A'] = loadTexture("resources/textures/bush6.png");
+    map->initTextures(textures);
 
     occlusionShader = new Shader(std::string("Shaders/shader2D.vert"), std::string("Shaders/occlusion2D.frag"));
     lightrayShader = new Shader(std::string("Shaders/shader2d.vert"), std::string("Shaders/lightray2D.frag"));
@@ -159,17 +166,18 @@ int main(int argc, char *argv[])
         }
         
         const Uint8 *state = SDL_GetKeyboardState(NULL);
+        const float speed = 0.2;
 
         if (state[SDL_SCANCODE_ESCAPE])
-            terminate = true;;
+            terminate = true;
         if (state[SDL_SCANCODE_W])
-            angleY -= timePassed;
+            angleY -= timePassed * speed;
         if (state[SDL_SCANCODE_S])
-            angleY += timePassed;
+            angleY += timePassed * speed;
         if (state[SDL_SCANCODE_A])
-            angleX += timePassed;
+            angleX += timePassed * speed;
         if (state[SDL_SCANCODE_D])
-            angleX -= timePassed;
+            angleX -= timePassed * speed;
         if (state[SDL_SCANCODE_SPACE])
             altitude += 1;
         if (state[SDL_SCANCODE_C])
@@ -198,7 +206,7 @@ void draw(SDL_Window * screen){
 
         glBindFramebuffer(GL_FRAMEBUFFER, occlusionFramebuffer);
 
-            glClearColor(0,0,0,1);
+            glClearColor(0,0,0,0);
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
@@ -218,15 +226,17 @@ void draw(SDL_Window * screen){
     glUseProgram(0);
     //occlusionTexture is now the occlusion map texture
 
+
     modelview = glm::mat4(1.0f);
-    projection = glm::ortho(0.,(double) WINDOW_WIDTH, 0., (double) WINDOW_HEIGHT);
+    projection = glm::ortho(0.,(double) shadowRes.x, 0., (double) 1);
+    glViewport(0,0,shadowRes.x, 1);
 
     glUseProgram(lightrayShader->getProgramID());
 
         glBindFramebuffer(GL_FRAMEBUFFER, lightrayFramebuffer);
 
             glClearColor(0,0,0,0);
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            glClear( GL_COLOR_BUFFER_BIT );
 
             glBindBuffer(GL_ARRAY_BUFFER, vboID);
         
@@ -244,6 +254,7 @@ void draw(SDL_Window * screen){
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glUseProgram(0);
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     projection = glm::ortho(0.,(double) WINDOW_WIDTH, 0., (double) WINDOW_HEIGHT);
     
@@ -262,7 +273,6 @@ void draw(SDL_Window * screen){
             glBindTexture(GL_TEXTURE_2D, occlusionTexture);
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, lightrayTexture);
-
                     glDrawArrays(GL_TRIANGLE_FAN, 4*4, 4);
                 glBindTexture(GL_TEXTURE_2D, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -330,7 +340,7 @@ void prepareVBO(){
         glBindTexture(GL_TEXTURE_2D, occlusionTexture);
         
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA,
             GL_UNSIGNED_BYTE, 0);
             
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -349,8 +359,8 @@ void prepareVBO(){
     
         glGenTextures(1, &lightrayTexture);
         glBindTexture(GL_TEXTURE_2D, lightrayTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, shadowRes.x, 1, 0, GL_RGB,
-            GL_UNSIGNED_BYTE, 0);                                 
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, shadowRes.x, 1, 0, GL_RED,
+            GL_FLOAT, 0);                                 
             
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

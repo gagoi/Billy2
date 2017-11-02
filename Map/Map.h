@@ -13,7 +13,7 @@ private:
     float m_cellSize;
     std::vector<Wall*> m_layout;
 
-    GLuint m_textures[26];
+    GLuint * m_textures;
     GLuint m_vboID;
     GLuint m_vaoID;
 

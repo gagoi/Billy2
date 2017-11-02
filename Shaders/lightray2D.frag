@@ -10,7 +10,7 @@ uniform sampler2D u_texture;
 uniform vec2 resolution;
 
 //layout(location = 0) out vec3 outColor;
-out vec4 screenColor;
+out float shadow;
 
 //alpha threshold for our occlusion map
 const float THRESHOLD = 0.75;
@@ -33,7 +33,7 @@ void main(void) {
 			vec2 coord = vec2(angleCos * dist + 0.5, angleSin * dist + 0.5);
 			data = texture(u_texture, coord);
 		  
-			if(data.r > 0.5){
+			if(data != vec4(0)){
 				broadPhasePassed = true;;
 				break;
 			}
@@ -53,18 +53,18 @@ void main(void) {
 				angle3 -= PI;
 			while(angle3 < 0);
 				angle3 += PI;
-
-			float maxdist = dist + 0.02/ sqrt(-min(cos(angle2), sin(angle3)));
 			
-			while(data.r > 0.5 && dist <= maxdist){
-				dist += step;
+			while(data != vec4(0)){
+				dist -= step;
 				vec2 coord = vec2(angleCos * dist + 0.5, angleSin * dist + 0.5);
 				data = texture(u_texture, coord);
 			}
 			
-			color = dist;
+			float maxdist = dist + 0.02/ sqrt(-min(cos(angle2), sin(angle3)));
+			
+			color = maxdist;
 		}
 	}
 	
-	screenColor = vec4(color);
+	shadow = color;
 }

@@ -8,7 +8,7 @@
 
 Wall::Wall(){}
 
-Wall::Wall(char type, float size, float x, float y):m_texID(type), m_size(size), m_xPos(x), m_yPos(y){
+Wall::Wall(char type, GLuint ** textures, float size, float x, float y):m_texID(type), m_textures(textures), m_size(size), m_xPos(x), m_yPos(y){
     float vboData[4*2 *2] = {  x, y,
                             x+size, y,
                             x+size, y+size,
@@ -40,7 +40,7 @@ char Wall::getType(){
 void Wall::draw(){
     glBindVertexArray(m_vaoID);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_texID);
+        glBindTexture(GL_TEXTURE_2D, (*m_textures)[m_texID]);
             glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);

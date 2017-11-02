@@ -12,7 +12,7 @@ uniform vec2 resolution;
 out vec4 fragColor;
 
 void main(){
-	fragColor = vec4(0.5) + texture(tex, vTexCoord0);
+	fragColor = texture(tex, vTexCoord0);
 	
 	vec2 rectCoord = vTexCoord0 - 0.5;
 	float angle = atan(rectCoord.y/rectCoord.x);
@@ -26,6 +26,8 @@ void main(){
 		angle -= 1.;
 	while(angle < 0.)
 		angle += 1.;
+	//angle *= 1600./resolution.x;
+	
 	/*
 	float pixelPos = angle * resolution.x;
 	float pixelBase1 = floor(pixelPos);
@@ -40,7 +42,7 @@ void main(){
 	float lightDistance = texture(shadowMap, vec2(angle, 0)).r;
 	
 	if(dist > lightDistance)
-		fragColor /= 2.;
+		fragColor *= 0.01;
 	
 	//fragColor = vec4(pixelBase1 / resolution.x);
 	
