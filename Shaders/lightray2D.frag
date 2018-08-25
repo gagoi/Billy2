@@ -41,18 +41,6 @@ void main(void) {
 		
 		if(broadPhasePassed){
 			step /= 5;
-
-			float angle2 = angle;
-			while(angle2 >= PI/2)
-				angle2 -= PI;
-			while(angle2 < -PI/2);
-				angle2 += PI;
-
-			float angle3 = angle;
-			while(angle3 >= PI)
-				angle3 -= PI;
-			while(angle3 < 0);
-				angle3 += PI;
 			
 			while(data != vec4(0)){
 				dist -= step;
@@ -60,7 +48,7 @@ void main(void) {
 				data = texture(u_texture, coord);
 			}
 			
-			float maxdist = dist + 0.02/ sqrt(-min(cos(angle2), sin(angle3)));
+			float maxdist = dist + 0.01;
 			
 			color = maxdist;
 		}

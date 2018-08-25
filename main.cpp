@@ -10,11 +10,13 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <windows.h>
 #include <stdio.h>
 #include "Shader.h"
 #include "Player/Player.h"
 #include "Map/map.h"
 
+typedef BOOL (WINAPI *EDDType)(LPCSTR,DWORD,PDISPLAY_DEVICEA,DWORD);
 
 
 #ifndef BUFFER_OFFSET
@@ -29,8 +31,8 @@
 bool msaa = true;
 int fps = 120;
 unsigned int lastTime, startTime, timePassed;
-SDL_Window *screen;
-SDL_GLContext glcontext;
+SDL_Window *screen = NULL;
+SDL_GLContext glcontext = NULL;
 
 double angleX = 0, angleY = 0, altitude = 0;
 
@@ -38,6 +40,7 @@ void draw(SDL_Window *);
 void SDLGLSetup();
 void prepareVBO();
 void CheckVBO();
+bool GetMonitorInfo(int nDeviceIndex, LPSTR lpszMonitorInfo);
 GLenum err;
 
 Shader * occlusionShader;
@@ -53,11 +56,12 @@ GLuint occlusionFramebuffer;
 
 GLuint lightrayTexture;
 GLuint lightrayFramebuffer;
+
 glm::vec2 shadowRes = glm::vec2((float)1000, (float)1000);
 
-const char *layout = "MAAAAAAMAMMMAAAMMMMAAAAAAMAMMMAAAMMMMAAAAAAAAAAAAAAAAAMMMMMMMMMAMMMMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMAMMAMMMMMMMMMMMMMMAAAAMMMMMMMMMMMMMMMMMMMMMMM";
-int sizeX = 18;
-int sizeY = 8;
+const char *layout = "AAAAMAAAAAAAMMMAAAAAAMAMAAAAAMMAMMAAAAMMMMMAAAMMAAAMMAAMAAAAAMA";
+int sizeX = 9;
+int sizeY = 7;
 
 float scl = 50;
 Map * map;
@@ -124,10 +128,18 @@ float bufferInfos[32 * 3] =  {
 int main(int argc, char *argv[])
 {
     SDLGLSetup();
-    glewInit();
+
+    const GLenum err = glewInit();
+    if (GLEW_OK != err)
+    {
+        std::cout << "GLEW Error: " << glewGetErrorString(err) << std::endl;
+        exit(1);
+    }
+
+    std::cout << glGetString(GL_VENDOR) << std::endl << glGetString(GL_RENDERER) << std::endl;
 
     prepareVBO();
-    
+
     map = new Map(sizeX, sizeY, layout, scl);
 
     GLuint *textures = (GLuint*) calloc(26, sizeof(GLuint));
@@ -182,7 +194,13 @@ int main(int argc, char *argv[])
             altitude += 1;
         if (state[SDL_SCANCODE_C])
             altitude -= 1;
-        draw(screen);
+
+        try {
+            draw(screen);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Draw Exception: " << e.what() <<std::endl;
+        }
 
         int sleep = 1000./fps - (SDL_GetTicks() - startTime);
         if(sleep > 0)
@@ -211,14 +229,20 @@ void draw(SDL_Window * screen){
 
             glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "projection"), 1, GL_FALSE, &projection[0][0]);
             glUniformMatrix4fv(glGetUniformLocation(occlusionShader->getProgramID(), "modelview"), 1, GL_FALSE, &modelview[0][0]);
-
+/*
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+*/
             for( int i = 0; i < sizeY; i++){
                 for( int j = 0; j < sizeX; j++){
                     if(map->getType(j*scl, i*scl) != 0)
                         map->getWall(j*scl, i*scl)->draw();
                 }
             }
-
+/*
+            glCullFace(GL_FRONT);
+            glDisable(GL_CULL_FACE);
+*/
             //draw scene with only walls
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -302,7 +326,7 @@ void SDLGLSetup(){
     SDL_Init(SDL_INIT_VIDEO);
     atexit(SDL_Quit);
 
-    GLint * samples;
+    GLint * samples = (GLint *) calloc(1, sizeof(GLint));
     glGetIntegerv(GL_MAX_SAMPLES, samples);
 
     if(msaa){
@@ -320,13 +344,15 @@ void SDLGLSetup(){
                                 WINDOW_WIDTH, WINDOW_HEIGHT,
                                 SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 
-    SDL_GL_CreateContext(screen);
+    glcontext = SDL_GL_CreateContext(screen);
+
+    if(!glcontext)
+        throw std::string("Error creating opengl context");
+
 
     if(msaa)
         glEnable(GL_MULTISAMPLE);
 
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_ALWAYS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -385,9 +411,9 @@ void prepareVBO(){
     
     glBindBuffer(GL_ARRAY_BUFFER , 0);
 
-    std::cout << "Rendering errors\n";
+
     while((err = glGetError()) != GL_NO_ERROR){
-        std::cout <<std::hex<<"0x"<< err << std::endl;
+        std::cout << "Rendering error: " << std::hex << "0x" << err << std::endl;
     }
 
     //CheckVBO();
@@ -418,4 +444,42 @@ void CheckVBO(){
     }
     
     std::cout << "-------------- VBO Content --------------\n\n";
+}
+
+bool GetMonitorInfo(int nDeviceIndex, LPSTR lpszMonitorInfo) {
+    bool bResult = TRUE;
+    EDDType EnumDisplayDevices;
+    HINSTANCE  hInstUserLib;
+    DISPLAY_DEVICE DispDev;
+    char szDeviceName[32];
+
+    hInstUserLib = LoadLibrary("User32.DLL");
+
+    EnumDisplayDevices = (EDDType) GetProcAddress(hInstUserLib,
+                                                 "EnumDisplayDevicesA");
+    if(!EnumDisplayDevices) {
+        FreeLibrary(hInstUserLib);
+        return FALSE;
+    }
+
+    ZeroMemory(&DispDev, sizeof(DISPLAY_DEVICE));
+    DispDev.cb = sizeof(DISPLAY_DEVICE);
+
+    // After first call to EnumDisplayDevices DispDev.DeviceString 
+    //contains graphic card name
+    if(EnumDisplayDevices(NULL, nDeviceIndex, &DispDev, 0)) {
+        lstrcpy(szDeviceName, DispDev.DeviceName);
+
+        // after second call DispDev.DeviceString contains monitor's name 
+        EnumDisplayDevices(szDeviceName, 0, &DispDev, 0);
+
+        lstrcpy(lpszMonitorInfo, DispDev.DeviceString);
+    }
+    else {
+        bResult = FALSE;
+    }
+
+    FreeLibrary(hInstUserLib);
+
+    return bResult;
 }

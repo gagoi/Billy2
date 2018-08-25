@@ -26,24 +26,25 @@ void main(){
 		angle -= 1.;
 	while(angle < 0.)
 		angle += 1.;
-	//angle *= 1600./resolution.x;
 	
-	/*
-	float pixelPos = angle * resolution.x;
-	float pixelBase1 = floor(pixelPos);
-	float pixelBase2 = pixelBase1 + 1.;
-	float percent1 = pixelPos - pixelBase1;
-	float percent2 = 1.-percent1;
-	while(pixelBase2 > resolution.x)
-		pixelBase2 -= resolution.x;
+	// lightmap interpolation with float angle
+	float pixelPos = angle * resolution.x; 	// pixel position in lightmap
+	float pixelBase1 = floor(pixelPos); 	// immediate left pixel on lightmap
+	float pixelBase2 = pixelBase1 + 1.; 	// immediate right pixel on lightmap
+	float percent1 = pixelBase2 - pixelPos; // percentage of interpolation on the first pixel (on 0 to 1 scale)
+											
+											/* | - - - - - - * - - - |
+										pixel 1			   value	pixel 2
+												<------------>
+												 percentage 1 = pixel 2 - value
+											*/
+
+	float percent2 = 1. - percent1; 		// percentage of interpolation on the second pixel
 	
 	
-	float lightDistance = texture(shadowMap, vec2(pixelBase1 / resolution.x, 0)).r * percent2 + texture(shadowMap, vec2(pixelBase2 / resolution.x, 0)).r * percent1;*/
-	float lightDistance = texture(shadowMap, vec2(angle, 0)).r;
+	float lightDistance = texture(shadowMap, vec2(pixelBase1 / resolution.x, 0)).r * percent1 + texture(shadowMap, vec2(pixelBase2 / resolution.x, 0)).r * percent2;
 	
 	if(dist > lightDistance)
-		fragColor *= 0.01;
-	
-	//fragColor = vec4(pixelBase1 / resolution.x);
-	
+		fragColor *= 0.2; // for debug use, we only fade the display
+		
 }
