@@ -1,7 +1,7 @@
 #ifndef DEF_MAP
 #define DEF_MAP
 
-#include "../Wall/Wall.h"
+#include "Wall.h"
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

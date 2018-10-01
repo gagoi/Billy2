@@ -1,0 +1,41 @@
+INCD=\
+	D:\Documents\C++\Libraries \
+	D:\Programs\mingw64\lib\gCXX\x86_64-w64-mingw32\7.1.0\include\c++ \
+	D:\Programs\mingw64\include
+INCD_P=$(foreach d, $(INCD), -I$d)
+
+INC=mingw32 \
+	SDL2main SDL2 SDL2_image \
+	opengl32 glu32 freeglut glew32
+INC_P=$(foreach i, $(INC), -l$i)
+
+LIBD=\
+	D:\Documents\C++\Libraries\SDL2\lib
+LIBD_P=$(foreach i, $(LIBD), -L$i)
+
+SOURCES=main.cpp Shader.cpp \
+	sdlglutils.cpp Player/Player.cpp \
+	Wall/Wall.cpp Map/Map.cpp
+
+CXX=g++
+CFLAGS=-Wall $(INCD_P)
+LDFLAGS=$(LIBD_P) $(INC_P)
+ODIR=./obj
+OBJECTS=$(SOURCES:.cpp=.o)
+OBJS = $(patsubst %,$(ODIR)/%, $(notdir $(OBJECTS)) )
+ODIR=./obj
+EXECUTABLE=main
+
+
+all: $(OBJS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o $(EXECUTABLE)
+
+debug: $(OBJECTS)
+	@echo $(OBJECTS)
+	
+$(ODIR)/%.o: %.cpp
+	$(CXX) $(CFLAGS) -c $< -o $@ 
+
+clean:
+	rm *.o
+

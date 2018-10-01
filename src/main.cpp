@@ -13,8 +13,8 @@
 #include <windows.h>
 #include <stdio.h>
 #include "Shader.h"
-#include "Player/Player.h"
-#include "Map/map.h"
+#include "Player.h"
+#include "map.h"
 
 typedef BOOL (WINAPI *EDDType)(LPCSTR,DWORD,PDISPLAY_DEVICEA,DWORD);
 

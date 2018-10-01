@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <vector>
-#include "Vector2f"
+#include "Vector2f.h"
 
 using namespace std;
 

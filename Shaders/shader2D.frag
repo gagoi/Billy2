@@ -35,7 +35,7 @@ void main(){
 											
 											/* | - - - - - - * - - - |
 										pixel 1			   value	pixel 2
-												<------------>
+												<----------->
 												 percentage 1 = pixel 2 - value
 											*/
 
