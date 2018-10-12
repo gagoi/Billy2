@@ -69,7 +69,6 @@ float farr = 400.f;
 float scl = 75;
 Map * map;
 
-
 int main(int argc, char *argv[])
 {
     SDLGLSetup();
