@@ -17,7 +17,6 @@ Wall::Wall(char type, GLuint ** textures, float size, float x, float y):m_texID(
                             1, 0,
                             1, 1,
                             0, 1};
-
     glGenVertexArrays(1, &m_vaoID);
     glBindVertexArray(m_vaoID);
         glGenBuffers(1, &m_vboID);
@@ -29,6 +28,29 @@ Wall::Wall(char type, GLuint ** textures, float size, float x, float y):m_texID(
 
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(4*2 *1 * sizeof(float)));
             glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    float vboOccData[10*3] = {  x+size, y, -1,      // right begin
+                                x+size, y, 1,
+                                x+size, y+size, -1, // bottom begin
+                                x+size, y+size, 1,
+                                x, y+size, -1,      // left begin
+                                x, y+size, 1,       
+                                x, y, -1,           // top begin
+                                x, y, 1,
+                                x+size, y, -1,      // loop
+                                x+size, y, 1 };
+
+    glGenVertexArrays(1, &m_vaoOccID);
+    glBindVertexArray(m_vaoOccID);
+        glGenBuffers(1, &m_vboOccID);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vboOccID);
+            glBufferData(GL_ARRAY_BUFFER, 10*3 * sizeof(float), vboOccData, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+            glEnableVertexAttribArray(0);
+
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -44,4 +66,49 @@ void Wall::draw(){
             glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
+}
+
+void Wall::drawOcc(float lightX, float lightY, int neighbors[4]){
+    /*
+    if(m_texID != 0) { // if not a wall #TODO need proper way to check it
+        glBindVertexArray(m_vaoOccID);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 10);
+        glBindVertexArray(0);
+    }
+    */
+    /*
+    2 etapes: 
+        - cotes recevant de la lumière
+        - occlusion par un bloc
+        - propagation des signaux si bloc plein
+    */
+    bool lighted[4] = {0};
+    lighted[0] = lightX > m_xPos + m_size   && !neighbors[0];  // right side
+    lighted[1] = lightY > m_yPos + m_size   && !neighbors[1];  // bottom side
+    lighted[2] = lightX < m_xPos            && !neighbors[2];           // left side
+    lighted[3] = lightY < m_yPos            && !neighbors[3];           // top side
+
+    bool draw[4] = {true, true, true, true};
+
+    if(lighted[0] || lighted[2]){
+        draw[1] = draw[1] && !neighbors[1];
+        draw[3] = draw[3] && !neighbors[3];
+    }
+    if(lighted[1] || lighted[3]){
+        draw[0] = draw[0] && !neighbors[0];
+        draw[2] = draw[2] && !neighbors[2];
+    }
+
+    if(m_texID != 0) { // if not a wall #TODO need proper way to check it
+        glBindVertexArray(m_vaoOccID);
+            if(draw[0])
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            if(draw[1])
+                glDrawArrays(GL_TRIANGLE_STRIP, 2, 4);
+            if(draw[2])
+                glDrawArrays(GL_TRIANGLE_STRIP, 4, 4);
+            if(draw[3])
+                glDrawArrays(GL_TRIANGLE_STRIP, 6, 4);
+        glBindVertexArray(0);
+    }
 }

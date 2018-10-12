@@ -7,12 +7,15 @@
 #include <GL/glu.h>
 #include <GL/glext.h>
 #include <GL/freeglut.h>
+#include <stdio.h>
 
 class Wall{
 private:
     GLuint m_texID;
     GLuint m_vboID;
+    GLuint m_vboOccID;
     GLuint m_vaoID;
+    GLuint m_vaoOccID;
 
     GLuint ** m_textures;
 
@@ -27,6 +30,7 @@ public:
     char getType();
 
     void draw();
+    void drawOcc(float viewX, float viewY, int neighbors[4]);
 };
 
 #endif

@@ -26,9 +26,12 @@ public:
 
     char getType(float x, float y);
     Wall * getWall(float x, float y);
+    bool isWall(float x, float y);
+    bool isFloor(float x, float y);
     int getWidth();
     int getHeight();
     void draw();
+    void drawOcc(float viewX, float viewY);
 };
 
 #endif
