@@ -54,13 +54,7 @@ GLuint occlusionTexture;
 GLuint occlusionDepthTexture;
 GLuint occlusionFramebuffer;
 
-const char *layout =   "AAAAMAAAA
-                        AAAMMMAAA
-                        AAAMAMAAA
-                        AAMMAMMAA
-                        AAMMMMMAA
-                        AMMAAAMMA
-                        AMAAAAAMA";
+const char *layout = "AAAAMAAAAAAAMMMAAAAAAMAMAAAAAMMAMMAAAAMMMMMAAAMMAAAMMAAMAAAAAMA";
 int sizeX = 9;
 int sizeY = 7;
 float nearr = 0.1f;
@@ -68,6 +62,7 @@ float farr = 400.f;
 
 float scl = 75;
 Map * map;
+
 
 int main(int argc, char *argv[])
 {
