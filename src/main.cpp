@@ -14,7 +14,8 @@
 #include <stdio.h>
 #include "Shader.h"
 #include "Player.h"
-#include "map.h"
+#include "Map.h"
+#include "mapLoader.h"
 
 typedef BOOL (WINAPI *EDDType)(LPCSTR,DWORD,PDISPLAY_DEVICEA,DWORD);
 
@@ -54,19 +55,19 @@ GLuint occlusionTexture;
 GLuint occlusionDepthTexture;
 GLuint occlusionFramebuffer;
 
-const char *layout = "AAAAMAAAAAAAMMMAAAAAAMAMAAAAAMMAMMAAAAMMMMMAAAMMAAAMMAAMAAAAAMA";
-int sizeX = 9;
-int sizeY = 7;
+mapLoader * ml;
+
 float nearr = 0.1f;
 float farr = 400.f;
 
-float scl = 75;
+float scl = 50;
 Map * map;
 
 
 int main(int argc, char *argv[])
 {
     SDLGLSetup();
+
 
     const GLenum err = glewInit();
     if (GLEW_OK != err)
@@ -81,9 +82,18 @@ int main(int argc, char *argv[])
 
     prepareVBO();
 
-    map = new Map(sizeX, sizeY, layout, scl);
+    ml = new mapLoader(std::string("resources/maps/forest"));
 
-    GLuint *textures = (GLuint*) calloc(26, sizeof(GLuint));
+    try {
+        map = ml->nextLevel();
+        angleX = map->getEntryCoordX();
+        angleY = map->getEntryCoordY();
+    } catch(const std::exception& e) {
+        std::cout << "Whoops! Something got wrong! "<< e.what() << std::endl;
+        exit(1);
+    }
+
+    GLuint *textures = (GLuint*) calloc('Z' - 'A' + 1, sizeof(GLuint));
     textures[0] = loadTexture("resources/textures/grass1.png");
     textures['M' - 'A'] = loadTexture("resources/textures/bush6.png");
     map->initTextures(textures);
@@ -99,6 +109,7 @@ int main(int argc, char *argv[])
 
     SDL_Event event;
     bool terminate = false;
+    bool loadLevel = true;
 
     lastTime = SDL_GetTicks();
 
@@ -109,12 +120,6 @@ int main(int argc, char *argv[])
         timePassed = startTime - lastTime;
 
         SDL_PollEvent(&event);
-
-        switch(event.type)
-        {
-            case SDL_QUIT:
-                terminate = true;
-        }
         
         const Uint8 *state = SDL_GetKeyboardState(NULL);
         const float speed = 0.2;
@@ -135,10 +140,25 @@ int main(int argc, char *argv[])
         if (state[SDL_SCANCODE_D])
             if(map->isFloor(angleX + movement, angleY))
                 angleX += movement;
-        if (state[SDL_SCANCODE_SPACE])
-            altitude += 1;
-        if (state[SDL_SCANCODE_C])
-            altitude -= 1;
+        if (state[SDL_SCANCODE_SPACE]) {
+            if(loadLevel) {
+                map = ml->nextLevel();
+                map->initTextures(textures);
+                angleX = map->getEntryCoordX();
+                angleY = map->getEntryCoordY();
+                loadLevel = false;
+            }
+        }
+        else {
+            loadLevel = true;
+        }
+
+        if(map->isOnExitTile(angleX, angleY)) {
+            map = ml->nextLevel();
+            map->initTextures(textures);
+            angleX = map->getEntryCoordX();
+            angleY = map->getEntryCoordY();
+        }
 
         try {
             draw(screen);

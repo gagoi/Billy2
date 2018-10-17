@@ -8,7 +8,11 @@ Map::Map(int x, int y):m_width(x), m_height(y){
     }
 }
 
-Map::Map(int x, int y, const char * str, float cellSize):m_width(x), m_height(y), m_cellSize(cellSize){
+Map::Map(int x, int y, const char * str, float cellSize,
+        int entryTileX, int entryTileY, int exitTileX, int exitTileY):
+        m_width(x), m_height(y), m_cellSize(cellSize),
+        m_entryTileX(entryTileX), m_entryTileY(entryTileY),
+        m_exitTileX(exitTileX), m_exitTileY(exitTileY) {
     for(int j = 0; j < y; j++){
         for(int i = 0; i < x; i++){
             m_layout.push_back(new Wall(str[j*x + i] - 'A', &m_textures, m_cellSize, i*m_cellSize, j*m_cellSize));
@@ -21,6 +25,18 @@ Map::~Map(){
 
 void Map::initTextures(GLuint * textures){
     m_textures = textures;
+}
+
+
+float Map::getEntryCoordX() {
+    return m_cellSize * (m_entryTileX + 0.5f);
+}
+float Map::getEntryCoordY() {
+    return m_cellSize * (m_entryTileY + 0.5f);
+}
+bool Map::isOnExitTile(float x, float y) {
+    return  (int)(y/m_cellSize) == m_exitTileY && 
+            (int)(x/m_cellSize) == m_exitTileX;
 }
 
 int Map::getWidth(){

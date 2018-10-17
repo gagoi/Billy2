@@ -83,10 +83,10 @@ void Wall::drawOcc(float lightX, float lightY, int neighbors[4]){
         - propagation des signaux si bloc plein
     */
     bool lighted[4] = {0};
-    lighted[0] = lightX > m_xPos + m_size   && !neighbors[0];  // right side
-    lighted[1] = lightY > m_yPos + m_size   && !neighbors[1];  // bottom side
-    lighted[2] = lightX < m_xPos            && !neighbors[2];           // left side
-    lighted[3] = lightY < m_yPos            && !neighbors[3];           // top side
+    lighted[0] = lightX >= m_xPos + m_size   && !neighbors[0];  // right side
+    lighted[1] = lightY >= m_yPos + m_size   && !neighbors[1];  // bottom side
+    lighted[2] = lightX <= m_xPos            && !neighbors[2];           // left side
+    lighted[3] = lightY <= m_yPos            && !neighbors[3];           // top side
 
     bool draw[4] = {true, true, true, true};
 
