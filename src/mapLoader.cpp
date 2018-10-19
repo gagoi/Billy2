@@ -2,7 +2,10 @@
 
 // methods
 
-mapLoader::mapLoader(std::string basicName):m_basicName(basicName), m_currentLevel(-1) {
+TMX::Parser* mapLoader::tmx = new TMX::Parser();
+
+mapLoader::mapLoader(std::string basicName, std::string extension):m_basicName(basicName), m_extension(extension),
+    m_currentLevel(-1) {
 
 }
 
@@ -14,11 +17,32 @@ Map * mapLoader::nextLevel() {
     printf("nextLevel\n");
     m_currentLevel++;
     std::string currentLevelName = m_basicName;
-    return readFromFile(currentLevelName.append(std::to_string(m_currentLevel)));
+    return readFromFile(currentLevelName.append(std::to_string(m_currentLevel).append(m_extension)));
 }
 
 // static functions
+
 Map * mapLoader::readFromFile(std::string fileName) {
+    std::cout << "loading file: " << fileName << std::endl;
+    tmx->load( fileName.c_str() );
+    int width = tmx->mapInfo.width;
+    int height = tmx->mapInfo.height;
+    int beginX = stoi(tmx->mapInfo.property.find("beginX")->second);
+    int beginY = stoi(tmx->mapInfo.property.find("beginY")->second);
+    int endX = stoi(tmx->mapInfo.property.find("endX")->second);
+    int endY = stoi(tmx->mapInfo.property.find("endY")->second);
+    float scl = (float) tmx->mapInfo.tileWidth;
+    const char * mapStr;
+    Map * map;
+
+    mapStr = tmx->tileLayer[tmx->tileLayer.begin()->first].data.contents.c_str();
+
+    map = new Map(width, height, mapStr, scl, beginX, beginY, endX, endY);
+
+    return map;
+}
+
+/*Map * mapLoader::readFromFile(std::string fileName) {
     int width = 0, height = 0;
     int beginX, beginY, endX, endY;
     float scl = 75.f;
@@ -59,3 +83,4 @@ Map * mapLoader::readFromFile(std::string fileName) {
 
     return map;
 }
+*/

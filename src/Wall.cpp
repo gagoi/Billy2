@@ -83,23 +83,23 @@ void Wall::drawOcc(float lightX, float lightY, int neighbors[4]){
         - propagation des signaux si bloc plein
     */
     bool lighted[4] = {0};
-    lighted[0] = lightX >= m_xPos + m_size   && !neighbors[0];  // right side
-    lighted[1] = lightY >= m_yPos + m_size   && !neighbors[1];  // bottom side
-    lighted[2] = lightX <= m_xPos            && !neighbors[2];           // left side
-    lighted[3] = lightY <= m_yPos            && !neighbors[3];           // top side
+    lighted[0] = lightX >= m_xPos + m_size   && isFloor(neighbors[0]);  // right side
+    lighted[1] = lightY >= m_yPos + m_size   && isFloor(neighbors[1]);  // bottom side
+    lighted[2] = lightX <= m_xPos            && isFloor(neighbors[2]);           // left side
+    lighted[3] = lightY <= m_yPos            && isFloor(neighbors[3]);           // top side
 
     bool draw[4] = {true, true, true, true};
 
     if(lighted[0] || lighted[2]){
-        draw[1] = draw[1] && !neighbors[1];
-        draw[3] = draw[3] && !neighbors[3];
+        draw[1] = draw[1] && isFloor(neighbors[1]);
+        draw[3] = draw[3] && isFloor(neighbors[3]);
     }
     if(lighted[1] || lighted[3]){
-        draw[0] = draw[0] && !neighbors[0];
-        draw[2] = draw[2] && !neighbors[2];
+        draw[0] = draw[0] && isFloor(neighbors[0]);
+        draw[2] = draw[2] && isFloor(neighbors[2]);
     }
 
-    if(m_texID != 0) { // if not a wall #TODO need proper way to check it
+    if(isWall()) {
         glBindVertexArray(m_vaoOccID);
             if(draw[0])
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -111,4 +111,20 @@ void Wall::drawOcc(float lightX, float lightY, int neighbors[4]){
                 glDrawArrays(GL_TRIANGLE_STRIP, 6, 4);
         glBindVertexArray(0);
     }
+}
+
+bool Wall::isWall() {
+    return m_texID != 8;
+}
+
+bool Wall::isFloor() {
+    return !isWall();
+}
+
+bool Wall::isWall(int i) {
+    return i != 8;
+}
+
+bool Wall::isFloor(int i) {
+    return !isWall(i);
 }

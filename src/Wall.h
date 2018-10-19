@@ -31,6 +31,11 @@ public:
 
     void draw();
     void drawOcc(float viewX, float viewY, int neighbors[4]);
+
+    bool isWall();
+    bool isFloor();
+    static bool isWall(int i);
+    static bool isFloor(int i);
 };
 
 #endif

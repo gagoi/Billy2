@@ -2,3 +2,4 @@ makefile
 Makefile
 .vscode
 obj
+main.exe

@@ -1,30 +1,4 @@
-#include <SDL2/SDL.h>
-#include <GL/glew.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glext.h>
-#include <GL/freeglut.h>
-#include <cstdlib>
-#include <time.h>
-#include <math.h>
-#include <iostream>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <windows.h>
-#include <stdio.h>
-#include "Shader.h"
-#include "Player.h"
-#include "Map.h"
-#include "mapLoader.h"
-
-typedef BOOL (WINAPI *EDDType)(LPCSTR,DWORD,PDISPLAY_DEVICEA,DWORD);
-
-
-#ifndef BUFFER_OFFSET
-
-    #define BUFFER_OFFSET(offset) ((char*)NULL + (offset))
-
-#endif
+#include "main.h"
 
 #define WINDOW_WIDTH 1600
 #define WINDOW_HEIGHT 900
@@ -82,7 +56,7 @@ int main(int argc, char *argv[])
 
     prepareVBO();
 
-    ml = new mapLoader(std::string("resources/maps/forest"));
+    ml = new mapLoader(std::string("resources/maps/test"), std::string(".tmx"));
 
     try {
         map = ml->nextLevel();
@@ -94,8 +68,8 @@ int main(int argc, char *argv[])
     }
 
     GLuint *textures = (GLuint*) calloc('Z' - 'A' + 1, sizeof(GLuint));
-    textures[0] = loadTexture("resources/textures/grass1.png");
-    textures['M' - 'A'] = loadTexture("resources/textures/bush6.png");
+    textures[8] = loadTexture("resources/textures/grass1.png");
+    textures[7] = loadTexture("resources/textures/bush6.png");
     map->initTextures(textures);
 
     occlusionShader = new Shader(std::string("Shaders/occlusion3D.vert"), std::string("Shaders/occlusion3D.frag"));
@@ -129,16 +103,16 @@ int main(int argc, char *argv[])
         if (state[SDL_SCANCODE_ESCAPE])
             terminate = true;
         if (state[SDL_SCANCODE_W])
-            if(map->isFloor(angleX, angleY - movement))
+            if(map->getWall(angleX, angleY - movement)->isFloor())
                 angleY -= movement;
         if (state[SDL_SCANCODE_S])
-            if(map->isFloor(angleX, angleY + movement))
+            if(map->getWall(angleX, angleY + movement)->isFloor())
                 angleY += movement;
         if (state[SDL_SCANCODE_A])
-            if(map->isFloor(angleX - movement, angleY))
+            if(map->getWall(angleX - movement, angleY)->isFloor())
                 angleX -= movement;
         if (state[SDL_SCANCODE_D])
-            if(map->isFloor(angleX + movement, angleY))
+            if(map->getWall(angleX + movement, angleY)->isFloor())
                 angleX += movement;
         if (state[SDL_SCANCODE_SPACE]) {
             if(loadLevel) {
@@ -152,6 +126,7 @@ int main(int argc, char *argv[])
         else {
             loadLevel = true;
         }
+
 
         if(map->isOnExitTile(angleX, angleY)) {
             map = ml->nextLevel();
