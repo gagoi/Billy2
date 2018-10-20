@@ -29,8 +29,10 @@ namespace TSX {
     tileset.name = root_node->first_attribute( "name" )->value();
     tileset.tileWidth = std::atoi( root_node->first_attribute( "tilewidth" )->value() );
     tileset.tileHeight = std::atoi( root_node->first_attribute( "tileheight" )->value() );
-    tileset.spacing = std::atoi( root_node->first_attribute( "spacing" )->value() );
-    tileset.margin = std::atoi( root_node->first_attribute( "margin" )->value() );
+    if( root_node->first_attribute( "spacing" ) != 0 )
+      tileset.spacing = std::atoi( root_node->first_attribute( "spacing" )->value() );
+    if( root_node->first_attribute( "margin" ) != 0 )
+      tileset.margin = std::atoi( root_node->first_attribute( "margin" )->value() );
 
     if( root_node->first_node( "tileoffset" ) != 0 ) {
       tileset.offsetX = std::atoi( root_node->first_node( "tileoffset" )->first_attribute( "x" )->value() );
@@ -42,15 +44,6 @@ namespace TSX {
       for( rapidxml::xml_node<>* properties_node = root_node->first_node( "properties" )->first_node( "property" ); properties_node; properties_node = properties_node->next_sibling() ) {
         tileset.property[properties_node->first_attribute( "name" )->value()] = properties_node->first_attribute( "value" )->value();
       }
-    }
-
-    //parse tileset image
-    tileset.image.source = root_node->first_node( "image" )->first_attribute( "source" )->value();
-    tileset.image.width = std::atoi( root_node->first_node( "image" )->first_attribute( "width" )->value() );
-    tileset.image.height = std::atoi( root_node->first_node( "image" )->first_attribute( "height" )->value() );
-
-    if( root_node->first_node( "image" )->first_attribute( "trans" ) != 0 ) {
-      tileset.image.transparentColor = std::atoi( root_node->first_node( "image" )->first_attribute( "trans" )->value() );
     }
 
     //parse tileset terrains
@@ -71,19 +64,22 @@ namespace TSX {
       }
     }
 
-    //pare tile
+    //parse tiles
     if( root_node->first_node( "tile" ) != 0 ) {
+      tileList.clear();
       for( rapidxml::xml_node<>* tile_node = root_node->first_node( "tile" ); tile_node; tile_node = tile_node->next_sibling() ) {
         Tile tile;
         //tile - id
         tile.id = std::atoi( tile_node->first_attribute( "id" )->value() );
         //tile - terrain
-        std::string tmp = tile_node->first_attribute( "terrain" )->value();
-        std::stringstream ss( tmp );
-        std::string tmpValue;
+        if( tile_node->first_attribute( "terrain" ) != 0 ) {
+          std::string tmp = tile_node->first_attribute( "terrain" )->value();
+          std::stringstream ss( tmp );
+          std::string tmpValue;
 
-        while( std::getline( ss, tmpValue, ',' ) ) {
-          tile.terrain.push_back( std::atoi( tmpValue.c_str() ) );
+          while( std::getline( ss, tmpValue, ',' ) ) {
+            tile.terrain.push_back( std::atoi( tmpValue.c_str() ) );
+          }
         }
 
         //parse tile properties
@@ -93,8 +89,16 @@ namespace TSX {
           }
         }
 
+        if( tile_node->first_node( "image" ) != 0 ) {
+          rapidxml::xml_node<>* image_node = tile_node->first_node( "image" );
+          tile.image.height = atoi(image_node->first_attribute( "height" )->value());
+          tile.image.width = atoi(image_node->first_attribute( "width" )->value());
+          tile.image.source = image_node->first_attribute( "source" )->value();
+        }
+
         tileList.push_back( tile );
       }
     }
+    return true;
   }
 }

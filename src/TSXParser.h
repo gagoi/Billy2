@@ -19,7 +19,7 @@ namespace TSX {
 
       bool load( const char* filename );
 
-      struct TilesetImage {
+      struct TileImage {
         std::string source;
         std::string transparentColor;
         unsigned int width;
@@ -36,8 +36,6 @@ namespace TSX {
         int offsetY;
 
         std::map<std::string, std::string> property;
-
-        TilesetImage image;
       };
 
       struct Terrain {
@@ -50,6 +48,7 @@ namespace TSX {
         unsigned int id;
         std::vector<unsigned int> terrain;
         std::map<std::string, std::string> property;
+        TileImage image;
       };
 
       Tileset tileset;

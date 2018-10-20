@@ -114,7 +114,7 @@ void Wall::drawOcc(float lightX, float lightY, int neighbors[4]){
 }
 
 bool Wall::isWall() {
-    return m_texID != 8;
+    return m_texID != 7;
 }
 
 bool Wall::isFloor() {
@@ -122,7 +122,7 @@ bool Wall::isFloor() {
 }
 
 bool Wall::isWall(int i) {
-    return i != 8;
+    return i != 7;
 }
 
 bool Wall::isFloor(int i) {

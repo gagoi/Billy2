@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
     prepareVBO();
 
-    ml = new mapLoader(std::string("resources/maps/test"), std::string(".tmx"));
+    ml = new mapLoader(std::string("resources/maps/"), std::string("test"), std::string(".tmx"));
 
     try {
         map = ml->nextLevel();
@@ -66,11 +66,6 @@ int main(int argc, char *argv[])
         std::cout << "Whoops! Something got wrong! "<< e.what() << std::endl;
         exit(1);
     }
-
-    GLuint *textures = (GLuint*) calloc('Z' - 'A' + 1, sizeof(GLuint));
-    textures[8] = loadTexture("resources/textures/grass1.png");
-    textures[7] = loadTexture("resources/textures/bush6.png");
-    map->initTextures(textures);
 
     occlusionShader = new Shader(std::string("Shaders/occlusion3D.vert"), std::string("Shaders/occlusion3D.frag"));
     drawShader = new Shader(std::string("Shaders/shader2D.vert"), std::string("Shaders/shader2D.frag"));
@@ -117,7 +112,6 @@ int main(int argc, char *argv[])
         if (state[SDL_SCANCODE_SPACE]) {
             if(loadLevel) {
                 map = ml->nextLevel();
-                map->initTextures(textures);
                 angleX = map->getEntryCoordX();
                 angleY = map->getEntryCoordY();
                 loadLevel = false;
@@ -127,10 +121,8 @@ int main(int argc, char *argv[])
             loadLevel = true;
         }
 
-
         if(map->isOnExitTile(angleX, angleY)) {
             map = ml->nextLevel();
-            map->initTextures(textures);
             angleX = map->getEntryCoordX();
             angleY = map->getEntryCoordY();
         }
